@@ -1,8 +1,5 @@
-#include <iostream>
-#include <SOIL.h>
+#include "Calcs3D.h"
 #include <GLUT.h>
-#define _USE_MATH_DEFINES
-#include <math.h>
 
 using namespace std;
 
@@ -13,44 +10,49 @@ inline float ToRad(float angle_degrees) {
 float xrot = 0;
 float yrot = 0;
 float xpos = 0;
-float ypos = 0;
-float zpos = 0;
+float ypos = 0.5;
+float zpos = -2;
 bool go_forward = false, go_backward = false;
 bool look_up = false, look_down = false;
 bool turn_left = false, turn_right = false;
 bool go_left = false, go_right = false;
+
+bool tUp = false, tDown = false, tLeft = false, tRight = false;
+
 GLfloat light_ambient[] = { 0.8f,0.8f,0.8f,1.0f };
 
+Vec3 Triangle[3];
+Vec3 Line[2];
 
+bool bCollided;
+Calcs3D Math;
 
 GLuint texture;                                     
 
-bool LoadGLTextures()                                    
+void Init()
 {
-	texture = SOIL_load_OGL_texture
-	(
-		"Textures/texture.jpg",    
-		SOIL_LOAD_AUTO,
-		SOIL_CREATE_NEW_ID,
-		SOIL_FLAG_MULTIPLY_ALPHA
-	);
+	Triangle[0].x = -1.0f;
+	Triangle[0].y = 0.0f;
+	Triangle[0].z = 0.0f;
 
-	if (texture == 0)
-	{
-		cout << "Error with texture.jpg..........\n";        
-		return false;
-	}
-	else cout << "Load texture.jpg..........\n";           
+	Triangle[1].x = 1.0f;
+	Triangle[1].y = 0.0f;
+	Triangle[1].z = 0.0f;
 
-	glBindTexture(GL_TEXTURE_2D, texture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	Triangle[2].x = 0.0f;
+	Triangle[2].y = 1.0f;
+	Triangle[2].z = 0.0f;
 
-	return true;  
+	Line[0].x = 0.0f;
+	Line[0].y = 0.5f;
+	Line[0].z = 3.0f;
+
+	Line[1].x = 0.0f;
+	Line[1].y = 0.5f;
+	Line[1].z = -3.0f;
 
 }
+
 
 static void resize(int width, int height)    
 {
@@ -72,18 +74,26 @@ void timer(int) {
 	if (go_forward == true) {
 		xpos += (float)sin(yrot*3.14f / 180.0f) * 0.2f;
 		zpos += (float)cos(yrot*3.14f / 180.0f) * 0.2f;
+		//Line[0].x += (float)sin(yrot*3.14f / 180.0f) * 0.2f;
+		//Line[0].z += (float)sin(yrot*3.14f / 180.0f) * 0.2f;
 	}
 	if (go_backward == true) {
 		xpos -= (float)sin(yrot*3.14f / 180.0f) * 0.2f;
 		zpos -= (float)cos(yrot*3.14f / 180.0f) * 0.2f;
+		//Line[0].x -= (float)sin(yrot*3.14f / 180.0f) * 0.2f;
+		//Line[0].z -= (float)sin(yrot*3.14f / 180.0f) * 0.2f;
 	}
 	if (go_left == true) {
 		xpos += (float)cos(yrot*3.14f / 180.0f) * 0.15f;
 		zpos += (float)sin(yrot*3.14f / 180.0f) * -0.15f;
+		//Line[0].x += (float)cos(yrot*3.14f / 180.0f) * 0.15f;
+		//Line[0].z += (float)sin(yrot*3.14f / 180.0f) * -0.15f;
 	}
 	if (go_right == true) {
 		xpos -= (float)cos(yrot*3.14f / 180.0f) * 0.15f;
 		zpos -= (float)sin(yrot*3.14f / 180.0f) * -0.15f;
+		//Line[0].x -= (float)cos(yrot*3.14f / 180.0f) * 0.15f;
+		//Line[0].z -= (float)sin(yrot*3.14f / 180.0f) * -0.15f;
 	}
 	if (look_up == true) {
 		if (xrot >= 87.0f) {
@@ -93,6 +103,7 @@ void timer(int) {
 			xrot += 2.0f;
 		}
 	}
+
 	if (look_down == true) {
 		if (xrot <= -87.0f) {
 			xrot = -87.0f;
@@ -106,6 +117,27 @@ void timer(int) {
 	}
 	if (turn_right == true) {
 		yrot -= 2.0f;
+	}
+
+	if (tUp)
+	{
+		Line[0].y += 0.05f;
+		Line[1].y += 0.05f;
+	}
+	if (tDown)
+	{
+		Line[0].y -= 0.05f;
+		Line[1].y -= 0.05f;
+	}
+	if (tLeft)
+	{
+		Line[0].x += 0.05f;
+		Line[1].x += 0.05f;
+	}
+	if (tRight)
+	{
+     	Line[0].x -= 0.05f;
+		Line[1].x -= 0.05f;
 	}
 }
 
@@ -134,70 +166,28 @@ static void display(void)
 	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
 	glPopMatrix();
 
-	
-	glEnable(GL_TEXTURE_2D);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-
-	glBindTexture(GL_TEXTURE_2D, texture);          
-	glBegin(GL_QUADS);                               
-
-													 
-	glTexCoord2f(0.0f, 0.0f); glVertex3f(-6.0f, -4.0f, 10.0f);
-	glTexCoord2f(1.0f, 0.0f); glVertex3f(6.0f, -4.0f, 10.0f);
-	glTexCoord2f(1.0f, 1.0f); glVertex3f(6.0f, -4.0f, -10.0f);
-	glTexCoord2f(0.0f, 1.0f); glVertex3f(-6.0f, -4.0f, -10.0f);
-
+	glColor3ub(255, 255, 255);
+	glBegin(GL_TRIANGLES);															
+	glVertex3f(Triangle[0].x, Triangle[0].y, Triangle[0].z);
+						
+	glVertex3f(Triangle[1].x, Triangle[1].y, Triangle[1].z);
+						
+	glVertex3f(Triangle[2].x, Triangle[2].y, Triangle[2].z);
 	glEnd();
 
+	bCollided = Math.IntersectedPolygon(Triangle, Line, 3);
 
-	glBindTexture(GL_TEXTURE_2D, texture);
-	glBegin(GL_QUADS);                   
+	glLineWidth(3);
+	glBegin(GL_LINES);									
+	if (bCollided)
+		glColor3ub(0, 255, 0);
+	else
+		glColor3ub(255, 0, 0);
 
-
-	glTexCoord2f(0.0f, 0.0f); glVertex3f(-6.0f, 4.0f, -10.0f);
-	glTexCoord2f(1.0f, 0.0f); glVertex3f(6.0f, 4.0f, -10.0f);
-	glTexCoord2f(1.0f, 1.0f); glVertex3f(6.0f, 4.0f, 10.0f);
-	glTexCoord2f(0.f, 1.0f); glVertex3f(-6.0f, 4.0f, 10.0f);
+	glVertex3f(Line[0].x, Line[0].y, Line[0].z);
+	glVertex3f(Line[1].x, Line[1].y, Line[1].z);
 	glEnd();
 
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, texture);
-	glBegin(GL_QUADS);
-
-	glTexCoord2f(0.0f, 0.0f); glVertex3f(-6.0f, -4.0f, 10.0f);
-	glTexCoord2f(1.0f, 0.0f); glVertex3f(-6.0f, -4.0f, -10.0f);
-	glTexCoord2f(1.0f, 1.0f); glVertex3f(-6.0f, 4.0f, -10.0f);
-	glTexCoord2f(0.0f, 1.0f); glVertex3f(-6.0f, 4.0f, 10.0f);
-	glEnd();
-	
-
-	glBegin(GL_QUADS);
-
-	glTexCoord2f(0.0f, 0.0f); glVertex3f(6.0f, -4.0f, -10.0f);
-	glTexCoord2f(1.0f, 0.0f); glVertex3f(6.0f, -4.0f, 10.0f);
-	glTexCoord2f(1.0f, 1.0f); glVertex3f(6.0f, 4.0f, 10.0f);
-	glTexCoord2f(0.0f, 1.0f); glVertex3f(6.0f, 4.0f, -10.0f);
-	glEnd();
-
-
-	glBegin(GL_QUADS);
-	glTexCoord2f(0.0f, 0.0f); glVertex3f(-6.0f, -4.0f, -10.0f);
-	glTexCoord2f(1.0f, 0.0f); glVertex3f(6.0f, -4.0f, -10.0f);
-	glTexCoord2f(1.0f, 1.0f); glVertex3f(6.0f, 4.0f, -10.0f);
-	glTexCoord2f(0.0f, 1.0f); glVertex3f(-6.0f, 4.0f, -10.0f);
-	glEnd();
-
-
-	glBegin(GL_QUADS);
-	glTexCoord2f(0.0f, 0.0f); glVertex3f(6.0f, -4.0f, 10.0f);
-	glTexCoord2f(1.0f, 0.0f); glVertex3f(-6.0f, -4.0f, 10.0f);
-	glTexCoord2f(1.0f, 1.0f); glVertex3f(-6.0f, 4.0f, 10.0f);
-	glTexCoord2f(0.0f, 1.0f); glVertex3f(6.0f, 4.0f, 10.0f);
-	glEnd();
-
-
-
-	glDisable(GL_TEXTURE_2D);
 
 	glutSwapBuffers();                
 
@@ -282,7 +272,35 @@ static void key_release(unsigned char key, int x, int y)
 
 static void spec(int key, int x, int y) {              
 	switch (key) {
-	case  GLUT_KEY_F1:                             
+	case  GLUT_KEY_UP:
+		tUp = true;
+		break;
+	case GLUT_KEY_DOWN:
+		tDown = true;
+		break;
+	case  GLUT_KEY_LEFT:
+		tLeft = true;
+		break;
+	case GLUT_KEY_RIGHT:
+		tRight = true;
+		break;
+	}
+	glutPostRedisplay();
+}
+
+static void specUp(int key, int x, int y) {
+	switch (key) {
+	case  GLUT_KEY_UP:
+		tUp = false;
+		break;
+	case GLUT_KEY_DOWN:
+		tDown = false;
+		break;
+	case  GLUT_KEY_LEFT:
+		tLeft = false;
+		break;
+	case GLUT_KEY_RIGHT:
+		tRight = false;
 		break;
 	}
 	glutPostRedisplay();
@@ -296,17 +314,18 @@ int main(int argc, char *argv[])
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | GLUT_ALPHA);
 
 	glutCreateWindow("Bullet");         
-											 
+								
+	Init();
+
 	glutReshapeFunc(resize);
 	glutDisplayFunc(display);
 	glutKeyboardFunc(key);
 	glutKeyboardUpFunc(key_release);
 	glutSpecialFunc(spec);
+	glutSpecialUpFunc(specUp);
 	glutTimerFunc(0, timer, 0);
 
 	glClearColor(0.0, 0.0, 0.0, 1);                 
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
@@ -328,8 +347,6 @@ int main(int argc, char *argv[])
 	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_ambient);
 
-
-	LoadGLTextures();   
 	glutMainLoop();
 
 	return 0;
