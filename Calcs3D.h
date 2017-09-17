@@ -4,6 +4,9 @@
 #include <float.h>
 #include "Vec3.h"
 
+#include <iostream>
+using namespace std;
+
 class Calcs3D
 {
 public:

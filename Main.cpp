@@ -103,17 +103,17 @@ void timer(int) {
 		xpos -= (float)cos(yrot*3.14f / 180.0f) * 0.15f;
 		zpos -= (float)sin(yrot*3.14f / 180.0f) * -0.15f;
 	}
-	cout << "\nPOZI: Xpos: " << xpos << ", Ypos: " << ypos << ", Zpos: " << zpos << "\n";
+	//cout << "\nPOZI: Xpos: " << xpos << ", Ypos: " << ypos << ", Zpos: " << zpos << "\n";
 
 	Line[0].x = xpos;
 	Line[0].y = ypos - 0.01f;
 	Line[0].z = zpos;
-	cout << "P1: Xpos: " << Line[0].x << ", Ypos: " << Line[0].y << ", Zpos: " << Line[0].z << "\n";
+	//cout << "P1: Xpos: " << Line[0].x << ", Ypos: " << Line[0].y << ", Zpos: " << Line[0].z << "\n";
 
 	Line[1].x = xpos + (dx * 500);
 	Line[1].y = ypos + (dy * 500);
 	Line[1].z = zpos + (dz * 500);
-	cout << "P2: Xpos: " << Line[1].x << ", Ypos: " << Line[1].y << ", Zpos: " << Line[1].z << "\n";
+	//cout << "P2: Xpos: " << Line[1].x << ", Ypos: " << Line[1].y << ", Zpos: " << Line[1].z << "\n";
 
 	if (look_up == true) {
 		if (xrot >= 87.0f) {
@@ -183,7 +183,7 @@ static void display(void)
 
 	cx = xpos + dx, cy = ypos + dy, cz = zpos + dz;
 
-	cout << "IRANY: CX: " << cx << ", CY: " << cy << ", CZ: " << cz << "\n";
+	//cout << "IRANY: CX: " << cx << ", CY: " << cy << ", CZ: " << cz << "\n";
 	gluLookAt(xpos, ypos, zpos, cx, cy, cz, a, b, c);/*mozgás, forgás vége*/
 
 	glPushMatrix();

@@ -188,8 +188,11 @@ bool Calcs3D::IntersectedPolygon(Vec3 vPoly[], Vec3 vLine[], int verticeCount)
 	Vec3 vIntersection = IntersectionPoint(vNormal, vLine, originDistance);
 
 	if (InsidePolygon(vIntersection, vPoly, verticeCount))
+	{
+		cout << "Intersection: Xpoint: " << vIntersection.x << ", Ypoint: " << vIntersection.y << ", Zpoint: " << vIntersection.z << endl;
 		return true;
-
+	}
+	cout << "Intersection: There is no collision!!!" << endl;
 	return false;								
 }
 
