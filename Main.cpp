@@ -1,4 +1,5 @@
 #include "Calcs3D.h"
+#include <iostream>
 #include <GLUT.h>
 
 using namespace std;
@@ -17,6 +18,8 @@ bool look_up = false, look_down = false;
 bool turn_left = false, turn_right = false;
 bool go_left = false, go_right = false;
 
+
+float cx, cy, cz;
 bool tUp = false, tDown = false, tLeft = false, tRight = false;
 
 GLfloat light_ambient[] = { 0.8f,0.8f,0.8f,1.0f };
@@ -43,13 +46,13 @@ void Init()
 	Triangle[2].y = 1.0f;
 	Triangle[2].z = 0.0f;
 
-	Line[0].x = 0.0f;
-	Line[0].y = 0.5f;
-	Line[0].z = 3.0f;
+	Line[0].x = xpos;
+	Line[0].y = 0.3f;
+	Line[0].z = zpos;
 
-	Line[1].x = 0.0f;
+	Line[1].x = xpos;
 	Line[1].y = 0.5f;
-	Line[1].z = -3.0f;
+	Line[1].z = zpos + 10.0f;
 
 }
 
@@ -61,7 +64,7 @@ static void resize(int width, int height)
 	glViewport(0, 0, width, height);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(45.0f, (GLfloat)width / (GLfloat)height, 0.1f, 100.0f);
+	gluPerspective(45.0f, (GLfloat)width / (GLfloat)height, 0.01f, 100.0f);
 
 	glMatrixMode(GL_MODELVIEW);
 
@@ -74,27 +77,36 @@ void timer(int) {
 	if (go_forward == true) {
 		xpos += (float)sin(yrot*3.14f / 180.0f) * 0.2f;
 		zpos += (float)cos(yrot*3.14f / 180.0f) * 0.2f;
-		//Line[0].x += (float)sin(yrot*3.14f / 180.0f) * 0.2f;
-		//Line[0].z += (float)sin(yrot*3.14f / 180.0f) * 0.2f;
 	}
 	if (go_backward == true) {
 		xpos -= (float)sin(yrot*3.14f / 180.0f) * 0.2f;
 		zpos -= (float)cos(yrot*3.14f / 180.0f) * 0.2f;
-		//Line[0].x -= (float)sin(yrot*3.14f / 180.0f) * 0.2f;
-		//Line[0].z -= (float)sin(yrot*3.14f / 180.0f) * 0.2f;
 	}
 	if (go_left == true) {
 		xpos += (float)cos(yrot*3.14f / 180.0f) * 0.15f;
 		zpos += (float)sin(yrot*3.14f / 180.0f) * -0.15f;
-		//Line[0].x += (float)cos(yrot*3.14f / 180.0f) * 0.15f;
-		//Line[0].z += (float)sin(yrot*3.14f / 180.0f) * -0.15f;
 	}
 	if (go_right == true) {
 		xpos -= (float)cos(yrot*3.14f / 180.0f) * 0.15f;
 		zpos -= (float)sin(yrot*3.14f / 180.0f) * -0.15f;
-		//Line[0].x -= (float)cos(yrot*3.14f / 180.0f) * 0.15f;
-		//Line[0].z -= (float)sin(yrot*3.14f / 180.0f) * -0.15f;
 	}
+	cout << "Xpos: " << xpos << ", Zpos: " << zpos << "\n";
+	Line[0].x = xpos;
+	Line[0].z = zpos;
+
+	glPushMatrix();
+		Line[1].x = xpos;
+		Line[1].z = zpos + 10;
+	glPopMatrix();
+
+	cout << "Xline 0: " << Line[0].x << ", Zline 0: " << Line[0].z << "\n";
+
+	/*Line[1].x = cx;
+	Line[1].y = cy;
+	Line[1].z = cz;*/
+
+	cout << "Xline 1: " << Line[1].x << ", Yline 1: " << Line[1].y << ", Zline 1: " << Line[1].z << "\n";
+
 	if (look_up == true) {
 		if (xrot >= 87.0f) {
 			xrot = 87.0f;
@@ -159,15 +171,24 @@ static void display(void)
 	float dy = sin(verticalAngle);
 	float dz = cos(verticalAngle) * cos(horizontalAngle);
 
-	float cx = xpos + dx, cy = ypos + dy, cz = zpos + dz;
-	gluLookAt(xpos, ypos, zpos, cx, cy, cz, 0, 1, 0);/*mozgás, forgás vége*/
+	float a = 0, b = 1, c = 0;
+
+	cx = xpos + dx, cy = ypos + dy, cz = zpos + dz;
+	gluLookAt(xpos, ypos, zpos, cx, cy, cz, a, b, c);/*mozgás, forgás vége*/
+
+	//cout << "Forgas: A: " << a << ", B: " << b << ", C: " << c << "\n";
 	glPushMatrix();
 	glTranslatef(8.0f, 3.0f, 0.0f);
 	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
 	glPopMatrix();
 
-	glColor3ub(255, 255, 255);
-	glBegin(GL_TRIANGLES);															
+	bCollided = Math.IntersectedPolygon(Triangle, Line, 3);
+
+	glBegin(GL_TRIANGLES);
+	if (bCollided)
+		glColor3ub(0, 255, 0);
+	else
+		glColor3ub(255, 0, 0);
 	glVertex3f(Triangle[0].x, Triangle[0].y, Triangle[0].z);
 						
 	glVertex3f(Triangle[1].x, Triangle[1].y, Triangle[1].z);
@@ -175,15 +196,9 @@ static void display(void)
 	glVertex3f(Triangle[2].x, Triangle[2].y, Triangle[2].z);
 	glEnd();
 
-	bCollided = Math.IntersectedPolygon(Triangle, Line, 3);
-
-	glLineWidth(3);
-	glBegin(GL_LINES);									
-	if (bCollided)
-		glColor3ub(0, 255, 0);
-	else
-		glColor3ub(255, 0, 0);
-
+	glLineWidth(5);
+	glBegin(GL_LINES);	
+	glColor3ub(255, 255, 255);
 	glVertex3f(Line[0].x, Line[0].y, Line[0].z);
 	glVertex3f(Line[1].x, Line[1].y, Line[1].z);
 	glEnd();
