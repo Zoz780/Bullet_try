@@ -18,13 +18,14 @@ bool look_up = false, look_down = false;
 bool turn_left = false, turn_right = false;
 bool go_left = false, go_right = false;
 
-
+float dx, dy, dz;
 float cx, cy, cz;
 bool tUp = false, tDown = false, tLeft = false, tRight = false;
 
 GLfloat light_ambient[] = { 0.8f,0.8f,0.8f,1.0f };
 
 Vec3 Triangle[3];
+Vec3 Triangle2[3];
 Vec3 Line[2];
 
 bool bCollided;
@@ -46,13 +47,25 @@ void Init()
 	Triangle[2].y = 1.0f;
 	Triangle[2].z = 0.0f;
 
+	Triangle2[0].x = -5.0f;
+	Triangle2[0].y = 0.0f;
+	Triangle2[0].z = 10.0f;
+
+	Triangle2[1].x = 5.0f;
+	Triangle2[1].y = 0.0f;
+	Triangle2[1].z = 10.0f;
+
+	Triangle2[2].x = 0.0f;
+	Triangle2[2].y = 5.0f;
+	Triangle2[2].z = 10.0f;
+
 	Line[0].x = xpos;
 	Line[0].y = 0.3f;
 	Line[0].z = zpos;
 
-	Line[1].x = xpos;
+	Line[1].x = 0.0f;
 	Line[1].y = 0.5f;
-	Line[1].z = zpos + 10.0f;
+	Line[1].z = 0.0f;
 
 }
 
@@ -90,22 +103,17 @@ void timer(int) {
 		xpos -= (float)cos(yrot*3.14f / 180.0f) * 0.15f;
 		zpos -= (float)sin(yrot*3.14f / 180.0f) * -0.15f;
 	}
-	cout << "Xpos: " << xpos << ", Zpos: " << zpos << "\n";
+	cout << "\nPOZI: Xpos: " << xpos << ", Ypos: " << ypos << ", Zpos: " << zpos << "\n";
+
 	Line[0].x = xpos;
+	Line[0].y = ypos - 0.01f;
 	Line[0].z = zpos;
+	cout << "P1: Xpos: " << Line[0].x << ", Ypos: " << Line[0].y << ", Zpos: " << Line[0].z << "\n";
 
-	glPushMatrix();
-		Line[1].x = xpos;
-		Line[1].z = zpos + 10;
-	glPopMatrix();
-
-	cout << "Xline 0: " << Line[0].x << ", Zline 0: " << Line[0].z << "\n";
-
-	/*Line[1].x = cx;
-	Line[1].y = cy;
-	Line[1].z = cz;*/
-
-	cout << "Xline 1: " << Line[1].x << ", Yline 1: " << Line[1].y << ", Zline 1: " << Line[1].z << "\n";
+	Line[1].x = xpos + (dx * 500);
+	Line[1].y = ypos + (dy * 500);
+	Line[1].z = zpos + (dz * 500);
+	cout << "P2: Xpos: " << Line[1].x << ", Ypos: " << Line[1].y << ", Zpos: " << Line[1].z << "\n";
 
 	if (look_up == true) {
 		if (xrot >= 87.0f) {
@@ -167,22 +175,24 @@ static void display(void)
 	float verticalAngle = ToRad(xrot);
 	float horizontalAngle = ToRad(yrot);
 
-	float dx = cos(verticalAngle) * sin(horizontalAngle);
-	float dy = sin(verticalAngle);
-	float dz = cos(verticalAngle) * cos(horizontalAngle);
+	dx = cos(verticalAngle) * sin(horizontalAngle);
+	dy = sin(verticalAngle);
+	dz = cos(verticalAngle) * cos(horizontalAngle);
 
 	float a = 0, b = 1, c = 0;
 
 	cx = xpos + dx, cy = ypos + dy, cz = zpos + dz;
+
+	cout << "IRANY: CX: " << cx << ", CY: " << cy << ", CZ: " << cz << "\n";
 	gluLookAt(xpos, ypos, zpos, cx, cy, cz, a, b, c);/*mozgás, forgás vége*/
 
-	//cout << "Forgas: A: " << a << ", B: " << b << ", C: " << c << "\n";
 	glPushMatrix();
 	glTranslatef(8.0f, 3.0f, 0.0f);
 	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
 	glPopMatrix();
 
 	bCollided = Math.IntersectedPolygon(Triangle, Line, 3);
+	bool bCollided2 = Math.IntersectedPolygon(Triangle2, Line, 3);
 
 	glBegin(GL_TRIANGLES);
 	if (bCollided)
@@ -194,6 +204,18 @@ static void display(void)
 	glVertex3f(Triangle[1].x, Triangle[1].y, Triangle[1].z);
 						
 	glVertex3f(Triangle[2].x, Triangle[2].y, Triangle[2].z);
+	glEnd();
+
+	glBegin(GL_TRIANGLES);
+	if (bCollided2)
+		glColor3ub(0, 255, 0);
+	else
+		glColor3ub(255, 0, 0);
+	glVertex3f(Triangle2[0].x, Triangle2[0].y, Triangle2[0].z);
+
+	glVertex3f(Triangle2[1].x, Triangle2[1].y, Triangle2[1].z);
+
+	glVertex3f(Triangle2[2].x, Triangle2[2].y, Triangle2[2].z);
 	glEnd();
 
 	glLineWidth(5);
